@@ -16,11 +16,10 @@ import {
   Clock,
   Trophy,
   UserCircle,
-  Settings,
 } from "lucide-react";
 import { BoardGameBoostIcon } from "./icons";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { currentUser } from "@/lib/data";
+import { useAuth } from "@/hooks/useAuth";
 import { Badge } from "./ui/badge";
 import { cn } from "@/lib/utils";
 
@@ -34,6 +33,16 @@ const navItems = [
 
 export function DashboardNav() {
   const pathname = usePathname();
+  const { user, profile } = useAuth();
+
+  // Show loading state if user data isn't available yet
+  if (!user) {
+    return (
+      <div className="p-4 text-center text-muted-foreground">
+        Loading navigation...
+      </div>
+    );
+  }
 
   return (
     <>
@@ -73,12 +82,27 @@ export function DashboardNav() {
       <SidebarFooter className="p-4 border-t border-sidebar-border">
          <div className="flex items-center gap-3">
             <Avatar>
-                <AvatarImage src={currentUser.avatarUrl} alt={currentUser.displayName} />
-                <AvatarFallback>{currentUser.displayName.charAt(0)}</AvatarFallback>
+                <AvatarImage 
+                  src={profile?.avatar_url || ""} 
+                  alt={profile?.display_name || user.email || "User"} 
+                />
+                <AvatarFallback>
+                  {profile?.display_name 
+                    ? profile.display_name.charAt(0).toUpperCase()
+                    : user.email?.charAt(0).toUpperCase() || "U"
+                  }
+                </AvatarFallback>
             </Avatar>
             <div className="flex flex-col overflow-hidden group-data-[collapsible=icon]:hidden">
-                <p className="font-semibold truncate">{currentUser.displayName}</p>
-                <p className="text-xs text-muted-foreground truncate">{currentUser.email}</p>
+                <p className="font-semibold truncate">
+                  {profile?.display_name || user.email?.split('@')[0] || "User"}
+                </p>
+                <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                {profile && (
+                  <Badge variant="secondary" className="text-xs w-fit mt-1">
+                    {profile.membership_tier}
+                  </Badge>
+                )}
             </div>
          </div>
       </SidebarFooter>

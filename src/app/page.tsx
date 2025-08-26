@@ -1,3 +1,5 @@
+"use client";
+
 import {
   Card,
   CardContent,
@@ -6,23 +8,38 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Medal, BookOpen, Users, Star } from 'lucide-react';
-import { currentUser, playtestSessions, gameProjects } from '@/lib/data';
+import { playtestSessions, gameProjects } from '@/lib/data';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
+import { LandingPage } from '@/components/landing-page';
+import { useAuth } from '@/hooks/useAuth';
 
-export default function DashboardPage() {
+function Dashboard() {
+  const { user, profile } = useAuth();
+  
   const upcomingSessions = playtestSessions.filter(
     (session) => new Date(session.scheduledDate) > new Date() && session.status === 'scheduled'
   );
-  const userProjects = gameProjects.filter(p => p.designerId === currentUser.id && p.isActive);
+  const userProjects = gameProjects.filter(p => p.designerId === user?.id && p.isActive);
+
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto mb-4"></div>
+          <p>Loading your dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-6">
       <div className="space-y-1">
         <h1 className="text-3xl font-bold tracking-tight font-headline">
-          Welcome back, {currentUser.displayName.split(' ')[0]}!
+          Welcome back, {(profile.display_name || user.email?.split('@')[0] || 'User').split(' ')[0]}!
         </h1>
         <p className="text-muted-foreground">
           Here's a snapshot of your journey in game design today.
@@ -39,7 +56,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {currentUser.totalContributionPoints}
+              {profile?.total_contribution_points || 0}
             </div>
             <p className="text-xs text-muted-foreground">
               +10 points from last week
@@ -53,7 +70,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {currentUser.totalTestingPoints}
+              {profile?.total_testing_points || 0}
             </div>
             <p className="text-xs text-muted-foreground">
               +5 from your last playtest
@@ -78,9 +95,12 @@ export default function DashboardPage() {
             <Star className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold capitalize">{currentUser.membershipTier}</div>
+            <div className="text-2xl font-bold capitalize">{profile?.membership_tier || 'basic'}</div>
             <p className="text-xs text-muted-foreground">
-              Expires on {new Date(currentUser.membershipExpiry).toLocaleDateString()}
+              {profile?.membership_expiry 
+                ? `Expires on ${new Date(profile.membership_expiry).toLocaleDateString()}`
+                : 'Active membership'
+              }
             </p>
           </CardContent>
         </Card>
@@ -140,4 +160,18 @@ export default function DashboardPage() {
       </div>
     </div>
   );
+}
+
+export default function HomePage() {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  return user ? <Dashboard /> : <LandingPage />;
 }

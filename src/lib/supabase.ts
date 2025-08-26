@@ -1,5 +1,4 @@
 import { createBrowserClient, createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
 
 export type Database = {
   public: {
@@ -175,7 +174,8 @@ export function createClient() {
 }
 
 // Server-side Supabase client (for API routes, Server Components, Server Actions)
-export function createServerSupabaseClient() {
+export async function createServerSupabaseClient() {
+  const { cookies } = await import('next/headers')
   const cookieStore = cookies()
 
   return createServerClient<Database>(
@@ -203,7 +203,9 @@ export function createServerSupabaseClient() {
 }
 
 // Admin client (server-side only, uses secret key)
-export function createAdminClient() {
+export async function createAdminClient() {
+  const { cookies } = await import('next/headers')
+  
   return createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SECRET_KEY! || process.env.SUPABASE_SERVICE_ROLE_KEY!,
