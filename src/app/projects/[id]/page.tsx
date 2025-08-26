@@ -26,7 +26,6 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { Separator } from "@/components/ui/separator";
-import { AIToolsClient } from "./ai-tools";
 
 export default function ProjectDetailPage({ params }: { params: { id: string } }) {
   const project = gameProjects.find((p) => p.id === params.id);
@@ -88,7 +87,6 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
           <TabsTrigger value="details">Details</TabsTrigger>
           <TabsTrigger value="feedback">Feedback</TabsTrigger>
           <TabsTrigger value="iterations">Iterations</TabsTrigger>
-          <TabsTrigger value="ai-tools">AI Tools</TabsTrigger>
         </TabsList>
 
         <TabsContent value="details">
@@ -167,10 +165,6 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
                     ))}
                 </CardContent>
             </Card>
-        </TabsContent>
-        
-        <TabsContent value="ai-tools">
-            <AIToolsClient project={project} feedback={projectFeedback}/>
         </TabsContent>
       </Tabs>
     </div>
