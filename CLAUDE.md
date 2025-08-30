@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 BoardGameBoost is a community platform for the Yogyakarta Board Game Design Club built with Next.js 15, TypeScript, and Firebase. It helps board game designers manage projects, run playtests, collect feedback, and iterate on their designs. The platform focuses on community-driven feedback and iterative design improvement.
 
+**Project Management**: This project is managed via CCPM (Claude Code Project Management) located in the adjacent ccpm folder. All epics and issues are managed centrally through CCPM. Use `/pm:*` commands from the ccpm folder to manage this project.
+
 ## Core Architecture
 
 ### Tech Stack

@@ -66,10 +66,12 @@ export function LandingNavbar() {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-9 w-9 rounded-full">
                     <Avatar className="h-9 w-9">
-                      <AvatarImage 
-                        src={profile?.avatar_url || ""} 
-                        alt={profile?.display_name || user.email || "User"} 
-                      />
+                      {profile?.avatar_url ? (
+                        <AvatarImage
+                          src={profile.avatar_url}
+                          alt={profile?.display_name || user.email || "User"}
+                        />
+                      ) : null}
                       <AvatarFallback>
                         {profile?.display_name 
                           ? profile.display_name.split(' ').map(n => n[0]).join('').toUpperCase()
@@ -85,12 +87,11 @@ export function LandingNavbar() {
                       {profile?.display_name || "User"}
                     </p>
                     <p className="text-xs leading-none text-muted-foreground">
-                      {user.email}
-                    </p>
-                    {profile && (
+                    {profile?.membership_tier && (
                       <p className="text-xs leading-none text-muted-foreground capitalize">
                         {profile.membership_tier} Member
                       </p>
+                    )}
                     )}
                   </div>
                   <DropdownMenuSeparator />

@@ -181,10 +181,12 @@ export function LandingPage() {
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
                     {activity.title}
-                    <Badge variant="secondary" className="flex items-center gap-1">
-                      <Users className="w-3 h-3" />
-                      {activity.participants}
-                    </Badge>
+                   {typeof activity.participants === "number" && (
+                      <Badge variant="secondary" className="flex items-center gap-1">
+                        <Users className="w-3 h-3" />
+                        {activity.participants}
+                      </Badge>
+                   )}
                   </CardTitle>
                   <CardDescription>{activity.description}</CardDescription>
                 </CardHeader>

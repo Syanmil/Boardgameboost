@@ -348,7 +348,14 @@ export class SessionsAPI {
 }
 
 // Convenience exports
-export const projectsAPI = new ProjectsAPI()
-export const serverProjectsAPI = new ServerProjectsAPI()
-export const queueAPI = new QueueAPI()
-export const sessionsAPI = new SessionsAPI()
+// Factory functions for safer instantiation
+export const createProjectsAPI = () => new ProjectsAPI()
+export const createServerProjectsAPI = () => new ServerProjectsAPI()
+export const createQueueAPI = () => new QueueAPI()
+export const createSessionsAPI = () => new SessionsAPI()
+
+// For backwards compatibility (use with caution in SSR)
+export const projectsAPI = createProjectsAPI()
+export const serverProjectsAPI = createServerProjectsAPI()
+export const queueAPI = createQueueAPI()
+export const sessionsAPI = createSessionsAPI()

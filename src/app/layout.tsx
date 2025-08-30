@@ -1,4 +1,25 @@
-'use client';
+import './globals.css';
+import { SidebarProvider, Sidebar, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
+import { AuthProvider } from '@/hooks/useAuth';
+import { ClientAppLayout } from './ClientAppLayout';
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="en" className="light">
+      <head>{/* ... head content */}</head>
+      <body className="font-body antialiased">
+        <AuthProvider>
+          <ClientAppLayout>{children}</ClientAppLayout>
+          <Toaster />
+        </AuthProvider>
+      </body>
+    </html>
+  );
+}
 
 import './globals.css';
 import { SidebarProvider, Sidebar, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
