@@ -270,6 +270,20 @@ Knowledge should be shared:
 
 ---
 
+## Documentation
+
+We've created comprehensive planning and technical documentation:
+
+- **[START HERE](docs/00_START_HERE.md)** - Documentation overview and quick navigation
+- **[FEATURE_AUDIT](docs/FEATURE_AUDIT.md)** - Current state analysis and gaps
+- **[PRD](docs/PRD.md)** - Complete product requirements
+- **[TECHNICAL_SPEC](docs/TECHNICAL_SPEC.md)** - System architecture and API specs
+- **[DATABASE_SCHEMA](docs/DATABASE_SCHEMA.md)** - Complete database design
+- **[UX_ENHANCEMENT_PLAN](docs/UX_ENHANCEMENT_PLAN.md)** - User experience strategy
+- **[DEVELOPMENT_ROADMAP](docs/DEVELOPMENT_ROADMAP.md)** - 12-sprint implementation plan
+
+---
+
 ## Getting Started
 
 ### For Designers (Using the Platform)
@@ -478,20 +492,41 @@ See [src/lib/types.ts](src/lib/types.ts) for complete type definitions.
 
 ## Roadmap
 
-### Current Status (MVP)
-- [x] User authentication and profiles
-- [x] Game project creation and management
-- [x] Playtest queue with priority algorithm
-- [x] Leaderboard and points system
-- [x] Landing page and dashboard
-- [x] Responsive mobile-first design
+### Current Status (Sprint 1 - In Progress) 🚧
 
-### Phase 2: Enhanced Feedback (Next)
+**Foundation Complete:**
+- [x] Complete database schema (12 tables with RLS)
+- [x] Validation layer (Zod schemas for all forms)
+- [x] React Query setup for state management
+- [x] Automated triggers (points, priority calculation)
+- [x] Seed data (badges, mechanics, themes)
+
+**In Development:**
+- [ ] Project CRUD API layer
+- [ ] Project creation form (multi-step wizard)
+- [ ] Feedback submission form
+- [ ] Profile editing form
+- [ ] File upload component
+
+**UI/Display Only (No Forms Yet):**
+- [x] Landing page with community info
+- [x] Project listing and detail pages
+- [x] Playtest queue display
+- [x] Leaderboard display
+- [x] User authentication (Supabase)
+
+**Next Up (Sprint 2):**
+- [ ] Queue submission workflow
+- [ ] Session registration system
+- [ ] Email notifications
+- [ ] Admin session management
+
+### Phase 2: Enhanced Feedback (Sprints 5-6)
 - [ ] Complete feedback submission system
 - [ ] Iteration tracking with feedback linkage
 - [ ] AI-powered feedback summarization
 - [ ] Designer analytics dashboard
-- [ ] Session management tools
+- [ ] Feedback visualization (radar charts)
 
 ### Phase 3: Community Features
 - [ ] Discussion forums by topic
