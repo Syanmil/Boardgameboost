@@ -87,11 +87,12 @@ export function LandingNavbar() {
                       {profile?.display_name || "User"}
                     </p>
                     <p className="text-xs leading-none text-muted-foreground">
+                      {user.email}
+                    </p>
                     {profile?.membership_tier && (
                       <p className="text-xs leading-none text-muted-foreground capitalize">
                         {profile.membership_tier} Member
                       </p>
-                    )}
                     )}
                   </div>
                   <DropdownMenuSeparator />

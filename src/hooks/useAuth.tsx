@@ -1,11 +1,10 @@
 // hooks/useAuth.ts - Modern authentication with @supabase/ssr
 'use client'
 
-import React, { createContext, useContext, useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase'
+import { createContext, useContext, useEffect, useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
-import type { Database } from '@/lib/supabase'
+import type { Database } from '@/lib/types/database.types'
 
 type Profile = Database['public']['Tables']['profiles']['Row']
 
@@ -25,23 +24,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
-  const router = useRouter()
   const supabase = createClient()
 
   useEffect(() => {
     // Get initial session
     const getSession = async () => {
-      console.log('Getting initial session...')
-      const { data: { session }, error } = await supabase.auth.getSession()
-      console.log('Initial session:', { session, error })
-      
+      const { data: { session } } = await supabase.auth.getSession()
       setUser(session?.user ?? null)
       
       if (session?.user) {
         await fetchProfile(session.user.id)
       }
       
-      console.log('Initial auth check complete, setting loading to false')
       setLoading(false)
     }
 
@@ -50,22 +44,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.email)
         setUser(session?.user ?? null)
         
         if (session?.user) {
           await fetchProfile(session.user.id)
-          
-          // Redirect to dashboard after successful sign in
-          if (event === 'SIGNED_IN' && window.location.pathname === '/auth') {
-            console.log('Redirecting to dashboard after sign in')
-            router.push('/')
-          }
         } else {
           setProfile(null)
         }
         
-        console.log('Auth state change handled, setting loading to false')
         setLoading(false)
       }
     )
@@ -75,7 +61,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchProfile = async (userId: string) => {
     try {
-      console.log('Fetching profile for user:', userId)
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -84,34 +69,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (error) {
         console.error('Error fetching profile:', error)
-        // If profile doesn't exist, that's okay - user might be new
-        if (error.code === 'PGRST116') {
-          console.log('Profile not found, user might be new')
-          setProfile(null)
-        }
         return
       }
 
-      console.log('Profile fetched successfully:', data)
       setProfile(data)
     } catch (error) {
       console.error('Error fetching profile:', error)
-      setProfile(null)
     }
   }
 
   const signIn = async (email: string, password: string) => {
     setLoading(true)
-    console.log('Attempting sign in with email:', email)
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     })
-    console.log('Sign in response:', { data, error })
-    if (error) {
-      setLoading(false)
-      throw error
-    }
+    if (error) throw error
+    setLoading(false)
   }
 
   const signUp = async (email: string, password: string, displayName: string) => {
