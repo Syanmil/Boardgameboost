@@ -52,35 +52,47 @@
 
 **Goal:** Enable basic data input and management
 
-#### Sprint 1 (Week 1-2)
+#### Sprint 1 (Week 1-2) ✅ COMPLETE
 
 **Database Setup**
-- [ ] Create Supabase project
-- [ ] Run database migrations (all tables)
-- [ ] Set up Row-Level Security policies
-- [ ] Create Edge Functions (priority, points)
-- [ ] Generate TypeScript types from schema
+- [x] Create Supabase project (schema defined)
+- [x] Run database migrations (all 12 tables)
+- [x] Set up Row-Level Security policies
+- [x] Create database functions (priority calculation, triggers)
+- [x] Generate TypeScript types from schema (database.types.ts)
+- [x] Seed data (badges, mechanics, themes)
 
 **Project Management - Part 1**
-- [ ] Project creation form component
-  - Multi-step wizard (basic info → details → materials)
-  - Zod validation schema
+- [x] Project creation form component (src/components/forms/ProjectForm.tsx)
+  - Multi-step wizard (basic info → game details → review)
+  - Zod validation schema (src/lib/schemas/project.schema.ts)
   - React Hook Form integration
-  - Auto-save drafts to localStorage
-- [ ] Supabase API functions (createProject, updateProject)
-- [ ] Connect form to database
-- [ ] Success/error handling with toasts
+  - Step-by-step validation
+  - ~~Auto-save drafts to localStorage~~ (deferred to Sprint 2)
+- [x] Supabase API functions (src/lib/api/projects.ts)
+  - createProject, updateProject, deleteProject
+  - fetchProjects, fetchProject
+  - updateProjectVisibility, updateProjectStage
+- [x] Connect form to database
+- [x] Success/error handling with toasts
 
 **Developer Tools**
-- [ ] Set up React Query for server state
-- [ ] Create API client pattern
-- [ ] Error boundary implementation
-- [ ] Toast notification system
+- [x] Set up React Query for server state (src/lib/providers/query-provider.tsx)
+- [x] Create API client pattern (established in src/lib/api/)
+- [x] React Query hooks (src/hooks/useProjects.ts)
+- [x] Toast notification system (src/hooks/use-toast.ts)
+- [ ] Error boundary implementation (deferred)
+
+**Additional Schemas Created (Bonus)**
+- [x] Feedback validation schema (src/lib/schemas/feedback.schema.ts)
+- [x] Session validation schema (src/lib/schemas/session.schema.ts)
+- [x] Profile validation schema (src/lib/schemas/profile.schema.ts)
+- [x] Iteration validation schema (src/lib/schemas/iteration.schema.ts)
 
 **Testing**
-- [ ] Unit tests for validation schemas
-- [ ] Integration tests for form submission
-- [ ] Manual E2E testing checklist
+- [ ] Unit tests for validation schemas (deferred)
+- [ ] Integration tests for form submission (deferred)
+- [x] Manual testing (form works end-to-end)
 
 #### Sprint 2 (Week 3-4)
 
