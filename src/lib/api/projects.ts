@@ -1,361 +1,281 @@
-// lib/api/projects.ts - Modern data layer with @supabase/ssr
-import { createClient, createServerSupabaseClient, createAdminClient } from '@/lib/supabase'
-import type { Database } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client';
+import type { Database } from '@/lib/types/database.types';
+import type { ProjectFormData, UpdateProjectFormData } from '@/lib/schemas/project.schema';
 
-type GameProject = Database['public']['Tables']['game_projects']['Row'] & {
-  profiles?: Database['public']['Tables']['profiles']['Row']
+type GameProject = Database['public']['Tables']['game_projects']['Row'];
+type GameProjectInsert = Database['public']['Tables']['game_projects']['Insert'];
+type GameProjectUpdate = Database['public']['Tables']['game_projects']['Update'];
+
+/**
+ * Project API Functions
+ * All functions for managing game projects
+ */
+
+/**
+ * Fetch all projects with optional filters
+ */
+export async function fetchProjects(filters?: {
+  stage?: string;
+  designerId?: string;
+  isActive?: boolean;
+  search?: string;
+}) {
+  const supabase = createClient();
+
+  let query = supabase
+    .from('game_projects')
+    .select(`
+      *,
+      designer:profiles!designer_id(
+        id,
+        display_name,
+        avatar_url,
+        membership_tier
+      ),
+      materials:project_materials(*)
+    `)
+    .order('created_at', { ascending: false });
+
+  // Apply filters
+  if (filters?.stage) {
+    query = query.eq('stage', filters.stage);
+  }
+
+  if (filters?.designerId) {
+    query = query.eq('designer_id', filters.designerId);
+  }
+
+  if (filters?.isActive !== undefined) {
+    query = query.eq('is_active', filters.isActive);
+  }
+
+  if (filters?.search) {
+    query = query.ilike('title', `%${filters.search}%`);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error('Error fetching projects:', error);
+    throw new Error('Failed to fetch projects');
+  }
+
+  return data;
 }
 
-type ProjectWithFeedback = GameProject & {
-  feedback: Array<Database['public']['Tables']['feedback']['Row'] & {
-    profiles: Database['public']['Tables']['profiles']['Row']
-  }>
+/**
+ * Fetch a single project by ID
+ */
+export async function fetchProject(id: string) {
+  const supabase = createClient();
+
+  const { data, error } = await supabase
+    .from('game_projects')
+    .select(`
+      *,
+      designer:profiles!designer_id(
+        id,
+        display_name,
+        avatar_url,
+        bio,
+        membership_tier
+      ),
+      materials:project_materials(*)
+    `)
+    .eq('id', id)
+    .single();
+
+  if (error) {
+    console.error('Error fetching project:', error);
+    throw new Error('Failed to fetch project');
+  }
+
+  return data;
 }
 
-// Client-side data functions (for use in React components)
-export class ProjectsAPI {
-  private supabase = createClient()
+/**
+ * Create a new project
+ */
+export async function createProject(data: ProjectFormData) {
+  const supabase = createClient();
 
-  async getGameProjects(): Promise<GameProject[]> {
-    const { data, error } = await this.supabase
-      .from('game_projects')
-      .select(`
-        *,
-        profiles!designer_id (
-          id,
-          display_name,
-          avatar_url
-        )
-      `)
-      .eq('is_active', true)
-      .order('created_at', { ascending: false })
+  // Get current user
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
 
-    if (error) {
-      console.error('Error fetching game projects:', error)
-      throw error
-    }
-
-    return data as GameProject[]
+  if (userError || !user) {
+    throw new Error('You must be logged in to create a project');
   }
 
-  async getUserProjects(userId: string) {
-    const { data, error } = await this.supabase
-      .from('game_projects')
-      .select('*')
-      .eq('designer_id', userId)
-      .eq('is_active', true)
-      .order('created_at', { ascending: false })
+  // Prepare insert data
+  const insertData: GameProjectInsert = {
+    designer_id: user.id,
+    title: data.title,
+    description: data.description,
+    tagline: data.tagline,
+    stage: data.stage,
+    player_count_min: data.playerCount.min,
+    player_count_max: data.playerCount.max,
+    play_time: data.playTime,
+    complexity: data.complexity,
+    mechanics: data.mechanics,
+    themes: data.themes || [],
+    visibility: data.visibility,
+    current_version: '0.1',
+    is_active: true,
+  };
 
-    if (error) {
-      console.error('Error fetching user projects:', error)
-      throw error
-    }
-
-    return data
-  }
-
-  async getProjectById(projectId: string): Promise<GameProject | null> {
-    const { data, error } = await this.supabase
-      .from('game_projects')
-      .select(`
-        *,
-        profiles!designer_id (
-          id,
-          display_name,
-          avatar_url
-        )
-      `)
-      .eq('id', projectId)
-      .single()
-
-    if (error) {
-      console.error('Error fetching project:', error)
-      return null
-    }
-
-    return data as GameProject
-  }
-
-  async getProjectWithFeedback(projectId: string): Promise<ProjectWithFeedback | null> {
-    const { data, error } = await this.supabase
-      .from('game_projects')
-      .select(`
-        *,
-        profiles!designer_id (
-          id,
-          display_name,
-          avatar_url
-        ),
-        feedback (
-          *,
-          profiles!player_id (
-            id,
-            display_name,
-            avatar_url
-          )
-        )
-      `)
-      .eq('id', projectId)
-      .single()
-
-    if (error) {
-      console.error('Error fetching project with feedback:', error)
-      return null
-    }
-
-    return data as ProjectWithFeedback
-  }
-
-  async createProject(project: Database['public']['Tables']['game_projects']['Insert']) {
-    const { data, error } = await this.supabase
-      .from('game_projects')
-      .insert([project])
-      .select()
-      .single()
-
-    if (error) {
-      console.error('Error creating project:', error)
-      throw error
-    }
-
-    return data
-  }
-
-  async updateProject(
-    projectId: string,
-    updates: Database['public']['Tables']['game_projects']['Update']
-  ) {
-    const { data, error } = await this.supabase
-      .from('game_projects')
-      .update(updates)
-      .eq('id', projectId)
-      .select()
-      .single()
-
-    if (error) {
-      console.error('Error updating project:', error)
-      throw error
-    }
-
-    return data
-  }
-
-  // Real-time subscription for project changes
-  subscribeToProject(projectId: string, callback: (payload: any) => void) {
-    const subscription = this.supabase
-      .channel(`project-${projectId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'feedback',
-          filter: `game_project_id=eq.${projectId}`,
-        },
-        callback
+  const { data: project, error } = await supabase
+    .from('game_projects')
+    .insert(insertData)
+    .select(`
+      *,
+      designer:profiles!designer_id(
+        id,
+        display_name,
+        avatar_url
       )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'game_projects',
-          filter: `id=eq.${projectId}`,
-        },
-        callback
-      )
-      .subscribe()
+    `)
+    .single();
 
-    return () => subscription.unsubscribe()
+  if (error) {
+    console.error('Error creating project:', error);
+    throw new Error('Failed to create project: ' + error.message);
   }
+
+  return project;
 }
 
-// Server-side functions (for use in Server Components, API routes)
-export class ServerProjectsAPI {
-  private supabase = createServerSupabaseClient()
-  private adminSupabase = createAdminClient()
+/**
+ * Update an existing project
+ */
+export async function updateProject(data: UpdateProjectFormData) {
+  const supabase = createClient();
 
-  async getGameProjects(): Promise<GameProject[]> {
-    const { data, error } = await this.supabase
-      .from('game_projects')
-      .select(`
-        *,
-        profiles!designer_id (
-          id,
-          display_name,
-          avatar_url
-        )
-      `)
-      .eq('is_active', true)
-      .order('created_at', { ascending: false })
+  const { id, ...updates } = data;
 
-    if (error) {
-      console.error('Error fetching game projects:', error)
-      throw error
-    }
+  // Prepare update data
+  const updateData: GameProjectUpdate = {};
 
-    return data as GameProject[]
+  if (updates.title) updateData.title = updates.title;
+  if (updates.description) updateData.description = updates.description;
+  if (updates.tagline !== undefined) updateData.tagline = updates.tagline;
+  if (updates.stage) updateData.stage = updates.stage;
+  if (updates.playerCount) {
+    updateData.player_count_min = updates.playerCount.min;
+    updateData.player_count_max = updates.playerCount.max;
+  }
+  if (updates.playTime) updateData.play_time = updates.playTime;
+  if (updates.complexity) updateData.complexity = updates.complexity;
+  if (updates.mechanics) updateData.mechanics = updates.mechanics;
+  if (updates.themes) updateData.themes = updates.themes;
+  if (updates.visibility) updateData.visibility = updates.visibility;
+
+  const { data: project, error } = await supabase
+    .from('game_projects')
+    .update(updateData)
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error updating project:', error);
+    throw new Error('Failed to update project: ' + error.message);
   }
 
-  async getUserProjects(userId: string) {
-    const { data, error } = await this.supabase
-      .from('game_projects')
-      .select('*')
-      .eq('designer_id', userId)
-      .eq('is_active', true)
-      .order('created_at', { ascending: false })
-
-    if (error) {
-      console.error('Error fetching user projects:', error)
-      throw error
-    }
-
-    return data
-  }
-
-  // Admin function to get all projects (uses admin client)
-  async getAllProjects() {
-    const { data, error } = await this.adminSupabase
-      .from('game_projects')
-      .select(`
-        *,
-        profiles!designer_id (
-          id,
-          display_name,
-          email
-        )
-      `)
-      .order('created_at', { ascending: false })
-
-    if (error) {
-      console.error('Error fetching all projects:', error)
-      throw error
-    }
-
-    return data as GameProject[]
-  }
+  return project;
 }
 
-// Queue and Sessions APIs
-export class QueueAPI {
-  private supabase = createClient()
+/**
+ * Delete a project (soft delete by setting is_active to false)
+ */
+export async function deleteProject(id: string) {
+  const supabase = createClient();
 
-  async getQueueEntries() {
-    const { data, error } = await this.supabase
-      .from('queue_entries')
-      .select(`
-        *,
-        game_projects (
-          id,
-          title,
-          profiles!designer_id (
-            display_name,
-            membership_tier
-          )
-        )
-      `)
-      .eq('status', 'queued')
-      .order('priority_score', { ascending: false })
+  const { error } = await supabase
+    .from('game_projects')
+    .update({ is_active: false })
+    .eq('id', id);
 
-    if (error) {
-      console.error('Error fetching queue entries:', error)
-      throw error
-    }
-
-    return data
+  if (error) {
+    console.error('Error deleting project:', error);
+    throw new Error('Failed to delete project');
   }
 
-  async addToQueue(gameProjectId: string) {
-    const { data, error } = await this.supabase
-      .from('queue_entries')
-      .insert([
-        {
-          game_project_id: gameProjectId,
-        },
-      ])
-      .select()
-      .single()
-
-    if (error) {
-      console.error('Error adding to queue:', error)
-      throw error
-    }
-
-    return data
-  }
-
-  // Real-time queue updates
-  subscribeToQueue(callback: (payload: any) => void) {
-    const subscription = this.supabase
-      .channel('queue-updates')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'queue_entries',
-        },
-        callback
-      )
-      .subscribe()
-
-    return () => subscription.unsubscribe()
-  }
+  return { success: true };
 }
 
-export class SessionsAPI {
-  private supabase = createClient()
+/**
+ * Update project visibility
+ */
+export async function updateProjectVisibility(
+  id: string,
+  visibility: 'public' | 'private' | 'unlisted'
+) {
+  const supabase = createClient();
 
-  async getPlaytestSessions() {
-    const { data, error } = await this.supabase
-      .from('playtest_sessions')
-      .select(`
-        *,
-        game_projects (
-          id,
-          title
-        ),
-        profiles!organizer_id (
-          display_name
-        )
-      `)
-      .eq('status', 'scheduled')
-      .gte('scheduled_date', new Date().toISOString())
-      .order('scheduled_date', { ascending: true })
+  const { data, error } = await supabase
+    .from('game_projects')
+    .update({ visibility })
+    .eq('id', id)
+    .select()
+    .single();
 
-    if (error) {
-      console.error('Error fetching playtest sessions:', error)
-      throw error
-    }
-
-    return data
+  if (error) {
+    console.error('Error updating project visibility:', error);
+    throw new Error('Failed to update visibility');
   }
 
-  async createSession(session: Database['public']['Tables']['playtest_sessions']['Insert']) {
-    const { data, error } = await this.supabase
-      .from('playtest_sessions')
-      .insert([session])
-      .select()
-      .single()
-
-    if (error) {
-      console.error('Error creating session:', error)
-      throw error
-    }
-
-    return data
-  }
+  return data;
 }
 
-// Convenience exports
-// Factory functions for safer instantiation
-export const createProjectsAPI = () => new ProjectsAPI()
-export const createServerProjectsAPI = () => new ServerProjectsAPI()
-export const createQueueAPI = () => new QueueAPI()
-export const createSessionsAPI = () => new SessionsAPI()
+/**
+ * Update project stage
+ */
+export async function updateProjectStage(
+  id: string,
+  stage: 'concept' | 'prototype' | 'playtesting' | 'refining' | 'pitching' | 'published'
+) {
+  const supabase = createClient();
 
-// For backwards compatibility (use with caution in SSR)
-export const projectsAPI = createProjectsAPI()
-export const serverProjectsAPI = createServerProjectsAPI()
-export const queueAPI = createQueueAPI()
-export const sessionsAPI = createSessionsAPI()
+  const updateData: GameProjectUpdate = { stage };
+
+  // If moving to published, set published_at
+  if (stage === 'published') {
+    updateData.published_at = new Date().toISOString();
+  }
+
+  const { data, error } = await supabase
+    .from('game_projects')
+    .update(updateData)
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error updating project stage:', error);
+    throw new Error('Failed to update stage');
+  }
+
+  return data;
+}
+
+/**
+ * Fetch projects by designer
+ */
+export async function fetchDesignerProjects(designerId: string) {
+  return fetchProjects({ designerId, isActive: true });
+}
+
+/**
+ * Fetch projects by stage
+ */
+export async function fetchProjectsByStage(stage: string) {
+  return fetchProjects({ stage, isActive: true });
+}
+
+/**
+ * Search projects
+ */
+export async function searchProjects(query: string) {
+  return fetchProjects({ search: query, isActive: true });
+}
